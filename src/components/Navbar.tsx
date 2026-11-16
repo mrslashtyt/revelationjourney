@@ -1,17 +1,41 @@
 import { useEffect, useState } from 'react';
-import { BookOpen, Map, ScrollText, Timer, Trophy } from 'lucide-react';
+import { BookOpen, Map, ScrollText, Timer, Trophy, Zap } from 'lucide-react';
+import { MatchGame } from './MatchGame';
 
 const LINKS = [
   { href: '#eras', label: 'The Two Eras', icon: BookOpen },
   { href: '#timeline', label: 'Timeline', icon: Timer },
-  { href: '#explorer', label: 'Explore Surahs', icon: ScrollText },
+  { href: '#verse', label: 'Verse of Reflection', icon: ScrollText },
+  { href: '#explorer', label: 'Explore Surahs', icon: BookOpen },
   { href: '#map', label: 'Revelation Map', icon: Map },
   { href: '#quiz', label: 'Quiz', icon: Trophy },
 ];
 
+function MatchGameButton() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="flex items-center gap-1.5 rounded-full px-4 py-2 text-sm text-cream/80 transition-all duration-300 hover:bg-gold-500/10 hover:text-gold-300"
+      >
+        <Zap className="h-3.5 w-3.5 text-orange-400" />
+        Match Game
+      </button>
+      {open && <MatchGame onClose={() => setOpen(false)} />}
+    </>
+  );
+}
+
+function useMatchGame() {
+  const [gameOpen, setGameOpen] = useState(false);
+  return { gameOpen, setGameOpen };
+}
+
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const { gameOpen, setGameOpen } = useMatchGame();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -43,14 +67,15 @@ export function Navbar() {
             <a
               key={href}
               href={href}
-              className="rounded-full px-4 py-2 text-sm text-cream/80 transition-all duration-300 hover:bg-gold-500/10 hover:text-gold-300"
+              className="rounded-full px-3.5 py-2 text-sm text-cream/80 transition-all duration-300 hover:bg-gold-500/10 hover:text-gold-300"
             >
               {label}
             </a>
           ))}
+          <MatchGameButton />
           <a
             href="#quiz"
-            className="ml-2 rounded-full border border-gold-500/50 bg-gold-500/10 px-4 py-2 text-sm font-medium text-gold-300 transition-all duration-300 hover:bg-gold-500/25 hover:shadow-[0_0_18px_rgba(233,197,106,0.35)]"
+            className="ml-1.5 rounded-full border border-gold-500/50 bg-gold-500/10 px-4 py-2 text-sm font-medium text-gold-300 transition-all duration-300 hover:bg-gold-500/25 hover:shadow-[0_0_18px_rgba(233,197,106,0.35)]"
           >
             Take the Quiz
           </a>
@@ -79,8 +104,19 @@ export function Navbar() {
               {label}
             </a>
           ))}
+          <button
+            onClick={() => {
+              setOpen(false);
+              setGameOpen(true);
+            }}
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-3 text-cream/85 transition hover:bg-gold-500/10 hover:text-gold-300"
+          >
+            <Zap className="h-4 w-4 text-orange-400" /> Match Game
+          </button>
         </div>
       )}
+
+      {gameOpen && <MatchGame onClose={() => setGameOpen(false)} />}
     </header>
   );
 }

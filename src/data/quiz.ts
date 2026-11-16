@@ -30,11 +30,12 @@ export function buildQuiz(count = 12): QuizQuestion[] {
     const isEraQuestion = Math.random() < 0.7;
 
     if (isEraQuestion) {
+      const options = shuffle(['Makkah', 'Madinah']);
       questions.push({
         id: `era-${surah.number}`,
         prompt: `In which city was Surah ${surah.nameEn} (${surah.nameAr}) revealed?`,
-        options: ['Makkah', 'Madinah'],
-        correctIndex: surah.era === 'Makkan' ? 0 : 1,
+        options,
+        correctIndex: options.indexOf(surah.era),
         explanation: `Surah ${surah.nameEn} is a ${surah.era} surah. ${surah.summary.split('.')[0]}.`,
       });
     } else {
