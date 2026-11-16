@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-night-950 text-cream font-body antialiased;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: rgba(217, 168, 63, 0.35);
+  color: #fff;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #07211a;
+}
+::-webkit-scrollbar-thumb {
+  background: #14503f;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #1d6b54;
+}
+
+@layer utilities {
+  .text-glow-gold {
+    text-shadow: 0 0 24px rgba(233, 197, 106, 0.45), 0 0 60px rgba(233, 197, 106, 0.18);
+  }
+  .card-surface {
+    background: linear-gradient(160deg, rgba(14, 58, 46, 0.85), rgba(7, 33, 26, 0.95));
+    border: 1px solid rgba(233, 197, 106, 0.16);
+    backdrop-filter: blur(6px);
+  }
+  .geometric-pattern {
+    background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23e9c56a' stroke-opacity='0.07'%3E%3Cpath d='M40 0l40 40-40 40L0 40z'/%3E%3Cpath d='M40 20l20 20-20 20-20-20z'/%3E%3Ccircle cx='40' cy='40' r='6'/%3E%3C/g%3E%3C/svg%3E");
+  }
+  .gold-shimmer {
+    background: linear-gradient(
+      110deg,
+      #e9c56a 25%,
+      #f9ecc7 50%,
+      #e9c56a 75%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
