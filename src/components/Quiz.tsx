@@ -1,13 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import { Award, Check, Crown, Flame, RotateCcw, Trophy, X, Zap } from 'lucide-react';
+import { Award, Check, Crown, Flame, RotateCcw, Trash2, Trophy, X, Zap } from 'lucide-react';
 import { buildQuiz, type QuizQuestion } from '../data/quiz';
 import { OrnamentDivider } from './Decor';
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
 
 interface LeaderboardRow {
   id: string;
@@ -16,6 +10,27 @@ interface LeaderboardRow {
   total: number;
   best_streak: number;
   created_at: string;
+}
+
+const STORAGE_KEY = 'two-eras-leaderboard-v1';
+
+function loadLeaderboard(): LeaderboardRow[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const rows = JSON.parse(raw) as LeaderboardRow[];
+    return rows.sort((a, b) => b.score - a.score || b.best_streak - a.best_streak).slice(0, 8);
+  } catch {
+    return [];
+  }
+}
+
+function saveLeaderboard(rows: LeaderboardRow[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(rows.slice(0, 50)));
+  } catch {
+    // storage unavailable — leaderboard simply is not persisted
+  }
 }
 
 function rankTitle(percentage: number): { title: string; note: string } {
@@ -47,25 +62,9 @@ export function Quiz() {
   const [playerName, setPlayerName] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>([]);
-  const [leaderboardError, setLeaderboardError] = useState(false);
-
-  const loadLeaderboard = async () => {
-    const { data, error } = await supabase
-      .from('quiz_scores')
-      .select('id, player_name, score, total, best_streak, created_at')
-      .order('score', { ascending: false })
-      .order('best_streak', { ascending: false })
-      .limit(8);
-    if (error) {
-      setLeaderboardError(true);
-      return;
-    }
-    setLeaderboardError(false);
-    setLeaderboard(data ?? []);
-  };
 
   useEffect(() => {
-    loadLeaderboard();
+    setLeaderboard(loadLeaderboard());
   }, []);
 
   const question = questions[current];
@@ -102,7 +101,6 @@ export function Quiz() {
   const next = () => {
     if (current + 1 >= questions.length) {
       setStage('finished');
-      loadLeaderboard();
     } else {
       setCurrent((c) => c + 1);
       setSelected(null);
@@ -112,17 +110,28 @@ export function Quiz() {
   const percentage = questions.length ? Math.round((score / questions.length) * 100) : 0;
   const rank = useMemo(() => rankTitle(percentage), [percentage]);
 
-  const submitScore = async () => {
+  const submitScore = () => {
     const name = playerName.trim().slice(0, 30);
     if (!name || submitted) return;
     setSubmitted(true);
-    await supabase.from('quiz_scores').insert({
+    const row: LeaderboardRow = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       player_name: name,
       score,
       total: questions.length,
       best_streak: bestStreak,
-    });
-    loadLeaderboard();
+      created_at: new Date().toISOString(),
+    };
+    const updated = [...loadLeaderboard(), row]
+      .sort((a, b) => b.score - a.score || b.best_streak - a.best_streak)
+      .slice(0, 8);
+    saveLeaderboard(updated);
+    setLeaderboard(updated);
+  };
+
+  const clearLeaderboard = () => {
+    saveLeaderboard([]);
+    setLeaderboard([]);
   };
 
   return (
@@ -277,14 +286,21 @@ export function Quiz() {
         </div>
 
         <div className="mt-10">
-          <h3 className="flex items-center justify-center gap-2 text-sm font-semibold uppercase tracking-[0.25em] text-gold-400">
-            <Trophy className="h-4 w-4" /> Leaderboard
-          </h3>
-          {leaderboardError ? (
-            <p className="mt-4 text-center text-sm text-cream/50">
-              The leaderboard could not be loaded right now — your score can still be saved.
-            </p>
-          ) : leaderboard.length === 0 ? (
+          <div className="flex items-center justify-center gap-3">
+            <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.25em] text-gold-400">
+              <Trophy className="h-4 w-4" /> Leaderboard
+            </h3>
+            {leaderboard.length > 0 && (
+              <button
+                onClick={clearLeaderboard}
+                className="flex items-center gap-1 rounded-full border border-cream/15 px-3 py-1 text-xs text-cream/45 transition hover:border-red-400/40 hover:text-red-300"
+                title="Clear saved scores"
+              >
+                <Trash2 className="h-3 w-3" /> Clear
+              </button>
+            )}
+          </div>
+          {leaderboard.length === 0 ? (
             <p className="mt-4 text-center text-sm text-cream/50">
               No scores yet — be the first to claim the top spot.
             </p>
@@ -314,6 +330,9 @@ export function Quiz() {
                   </span>
                 </div>
               ))}
+              <p className="pt-2 text-center text-xs text-cream/35">
+                Scores are saved on this device only.
+              </p>
             </div>
           )}
         </div>

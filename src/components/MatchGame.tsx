@@ -213,7 +213,7 @@ export function MatchGame({ onClose }: { onClose: () => void }) {
                   exit={{ y: 60, opacity: 0, rotate: 3 }}
                   transition={{ duration: 0.3 }}
                   draggable={draggable}
-                  onDragStart={(e) => e.dataTransfer.setData('text/plain', String(card.number))}
+                  onDragStart={(e) => (e as unknown as React.DragEvent).dataTransfer.setData('text/plain', String(card.number))}
                   className={`w-56 cursor-grab select-none rounded-2xl border border-gold-500/30 bg-gradient-to-br from-night-800 to-night-850 p-6 text-center shadow-[0_16px_40px_-12px_rgba(0,0,0,0.6)] active:cursor-grabbing ${
                     draggable ? '' : 'opacity-60'
                   }`}
