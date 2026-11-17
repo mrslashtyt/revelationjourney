@@ -1,122 +1,101 @@
-import { useEffect, useState } from 'react';
-import { BookOpen, Map, ScrollText, Timer, Trophy, Zap } from 'lucide-react';
+import { useState } from 'react';
+import { BookOpen, Compass, Home, Map as MapIcon, MessageCircle, Moon, ScrollText, Sparkles, Timer, X, Zap } from 'lucide-react';
+import { useNav, type PageId } from './NavContext';
 import { MatchGame } from './MatchGame';
 
-const LINKS = [
-  { href: '#eras', label: 'The Two Eras', icon: BookOpen },
-  { href: '#timeline', label: 'Timeline', icon: Timer },
-  { href: '#verse', label: 'Verse of Reflection', icon: ScrollText },
-  { href: '#explorer', label: 'Explore Surahs', icon: BookOpen },
-  { href: '#map', label: 'Revelation Map', icon: Map },
-  { href: '#quiz', label: 'Quiz', icon: Trophy },
+const NAV_ITEMS: Array<{ id: PageId; label: string; icon: typeof Home }> = [
+  { id: 'home', label: 'Home', icon: Home },
+  { id: 'explorer', label: 'Surah Explorer', icon: Compass },
+  { id: 'eras', label: 'Makkan vs Madinan', icon: BookOpen },
+  { id: 'timeline', label: 'Timeline', icon: Timer },
+  { id: 'map', label: 'Interactive Map', icon: MapIcon },
+  { id: 'quiz', label: 'Quiz & Games', icon: Sparkles },
+  { id: 'learn', label: 'Learn', icon: ScrollText },
+  { id: 'askai', label: 'Ask AI', icon: MessageCircle },
 ];
 
-function MatchGameButton() {
-  const [open, setOpen] = useState(false);
+export function Navbar() {
+  const { page, navigate } = useNav();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [gameOpen, setGameOpen] = useState(false);
+
+  const go = (id: PageId) => {
+    navigate(id);
+    setMobileOpen(false);
+  };
+
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 rounded-full px-4 py-2 text-sm text-cream/80 transition-all duration-300 hover:bg-gold-500/10 hover:text-gold-300"
-      >
-        <Zap className="h-3.5 w-3.5 text-orange-400" />
-        Match Game
-      </button>
-      {open && <MatchGame onClose={() => setOpen(false)} />}
-    </>
-  );
-}
-
-function useMatchGame() {
-  const [gameOpen, setGameOpen] = useState(false);
-  return { gameOpen, setGameOpen };
-}
-
-export function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
-  const [open, setOpen] = useState(false);
-  const { gameOpen, setGameOpen } = useMatchGame();
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  return (
-    <header
-      className={`fixed top-0 z-50 w-full transition-all duration-500 ${
-        scrolled
-          ? 'bg-night-950/90 shadow-[0_1px_0_rgba(233,197,106,0.15)] backdrop-blur-md'
-          : 'bg-transparent'
-      }`}
-    >
-      <nav className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
-        <a href="#top" className="flex items-center gap-3">
-          <svg viewBox="0 0 24 24" className="h-8 w-8 text-gold-400" fill="currentColor" aria-hidden>
-            <path d="M12 0l3 9 9 3-9 3-3 9-3-9-9-3 9-3z" />
-          </svg>
-          <span className="font-heading text-lg font-semibold tracking-wide text-cream">
-            The Two Eras <span className="font-arabic text-gold-400">الزهران</span>
-          </span>
-        </a>
-
-        <div className="hidden items-center gap-1 md:flex">
-          {LINKS.map(({ href, label }) => (
-            <a
-              key={href}
-              href={href}
-              className="rounded-full px-3.5 py-2 text-sm text-cream/80 transition-all duration-300 hover:bg-gold-500/10 hover:text-gold-300"
-            >
-              {label}
-            </a>
-          ))}
-          <MatchGameButton />
-          <a
-            href="#quiz"
-            className="ml-1.5 rounded-full border border-gold-500/50 bg-gold-500/10 px-4 py-2 text-sm font-medium text-gold-300 transition-all duration-300 hover:bg-gold-500/25 hover:shadow-[0_0_18px_rgba(233,197,106,0.35)]"
-          >
-            Take the Quiz
-          </a>
-        </div>
-
-        <button
-          className="rounded-lg p-2 text-gold-300 md:hidden"
-          onClick={() => setOpen((o) => !o)}
-          aria-label="Toggle menu"
-        >
-          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
-            {open ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
-          </svg>
-        </button>
-      </nav>
-
-      {open && (
-        <div className="border-t border-gold-500/15 bg-night-950/95 px-5 py-3 backdrop-blur-md md:hidden">
-          {LINKS.map(({ href, label }) => (
-            <a
-              key={href}
-              href={href}
-              onClick={() => setOpen(false)}
-              className="block rounded-lg px-3 py-3 text-cream/85 transition hover:bg-gold-500/10 hover:text-gold-300"
-            >
-              {label}
-            </a>
-          ))}
-          <button
-            onClick={() => {
-              setOpen(false);
-              setGameOpen(true);
-            }}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-3 text-cream/85 transition hover:bg-gold-500/10 hover:text-gold-300"
-          >
-            <Zap className="h-4 w-4 text-orange-400" /> Match Game
+      <header className="sticky top-0 z-50 border-b border-charcoal-200/50 bg-ivory-50/85 backdrop-blur-md">
+        <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3.5">
+          <button onClick={() => go('home')} className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-sage-500 text-ivory-50">
+              <Moon className="h-5 w-5" />
+            </span>
+            <span className="font-serif text-lg font-semibold text-charcoal-900">
+              Two Eras <span className="font-arabic text-sage-600">الوحي</span>
+            </span>
           </button>
-        </div>
-      )}
+
+          <div className="hidden items-center gap-0.5 lg:flex">
+            {NAV_ITEMS.map(({ id, label }) => (
+              <button
+                key={id}
+                onClick={() => go(id)}
+                className={`rounded-lg px-3.5 py-2 text-sm font-medium transition-all duration-200 ${
+                  page === id
+                    ? 'bg-sage-100 text-sage-700'
+                    : 'text-charcoal-500 hover:bg-ivory-200 hover:text-charcoal-800'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+            <button
+              onClick={() => setGameOpen(true)}
+              className="ml-1 flex items-center gap-1.5 rounded-lg bg-sand-400 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-sand-500"
+            >
+              <Zap className="h-3.5 w-3.5" /> Match Game
+            </button>
+          </div>
+
+          <button
+            className="rounded-lg p-2 text-charcoal-600 lg:hidden"
+            onClick={() => setMobileOpen((o) => !o)}
+            aria-label="Toggle menu"
+          >
+            {mobileOpen ? <X className="h-6 w-6" /> : (
+              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M4 7h16M4 12h16M4 17h16" />
+              </svg>
+            )}
+          </button>
+        </nav>
+
+        {mobileOpen && (
+          <div className="border-t border-charcoal-200/40 bg-ivory-50 px-5 py-3 lg:hidden">
+            {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => go(id)}
+                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
+                  page === id ? 'bg-sage-100 text-sage-700' : 'text-charcoal-600 hover:bg-ivory-200'
+                }`}
+              >
+                <Icon className="h-4 w-4" /> {label}
+              </button>
+            ))}
+            <button
+              onClick={() => { setMobileOpen(false); setGameOpen(true); }}
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold text-sand-600"
+            >
+              <Zap className="h-4 w-4" /> Match Game
+            </button>
+          </div>
+        )}
+      </header>
 
       {gameOpen && <MatchGame onClose={() => setGameOpen(false)} />}
-    </header>
+    </>
   );
 }
