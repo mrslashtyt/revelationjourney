@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BookOpen, Compass, Home, Map as MapIcon, MessageCircle, Moon, ScrollText, Sparkles, Timer, X, Zap } from 'lucide-react';
+import { BookOpen, Compass, Home, Map as MapIcon, MessageCircle, Moon, ScrollText, Sparkles, Timer, TrendingUp, X, Zap } from 'lucide-react';
 import { useNav, type PageId } from './NavContext';
 import { MatchGame } from './MatchGame';
 
@@ -12,6 +12,7 @@ const NAV_ITEMS: Array<{ id: PageId; label: string; icon: typeof Home }> = [
   { id: 'quiz', label: 'Quiz & Games', icon: Sparkles },
   { id: 'learn', label: 'Learn', icon: ScrollText },
   { id: 'askai', label: 'Ask AI', icon: MessageCircle },
+  { id: 'progress', label: 'My Learning', icon: TrendingUp },
 ];
 
 export function Navbar() {

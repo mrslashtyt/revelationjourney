@@ -14,34 +14,31 @@ interface FloatText {
 interface SortBinProps {
   label: string;
   arabic: string;
-  accent: 'emerald' | 'gold';
+  isMakkah: boolean;
   isHot: boolean;
   onDrop: (e: React.DragEvent) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDragLeave: () => void;
 }
 
-function SortBin({ label, arabic, accent, isHot, onDrop, onDragOver, onDragLeave }: SortBinProps) {
-  const ring =
-    accent === 'emerald'
-      ? isHot
-        ? 'border-emerald-400 bg-emerald-500/25 shadow-[0_0_40px_rgba(52,211,153,0.4)] scale-[1.04]'
-        : 'border-emerald-500/40 bg-emerald-500/5'
-      : isHot
-        ? 'border-gold-400 bg-gold-500/25 shadow-[0_0_40px_rgba(233,197,106,0.4)] scale-[1.04]'
-        : 'border-gold-500/40 bg-gold-500/5';
+function SortBin({ label, arabic, isMakkah, isHot, onDrop, onDragOver, onDragLeave }: SortBinProps) {
+  const base = isMakkah
+    ? isHot
+      ? 'border-sage-500 bg-sage-50 scale-[1.03]'
+      : 'border-sage-300 bg-sage-50/30'
+    : isHot
+      ? 'border-sand-500 bg-sand-50 scale-[1.03]'
+      : 'border-sand-300 bg-sand-50/30';
   return (
     <div
       onDrop={onDrop}
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
-      className={`flex min-h-[150px] flex-1 flex-col items-center justify-center rounded-3xl border-2 border-dashed p-6 text-center transition-all duration-200 ${ring}`}
+      className={`flex min-h-[140px] flex-1 flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center transition-all duration-200 ${base}`}
     >
-      <span className={`font-arabic text-3xl ${accent === 'emerald' ? 'text-emerald-300' : 'text-gold-300'}`}>
-        {arabic}
-      </span>
-      <span className="mt-1 font-heading text-xl text-cream">{label}</span>
-      <span className="mt-1 text-xs uppercase tracking-[0.2em] text-cream/40">Drop here</span>
+      <span className={`font-arabic text-3xl ${isMakkah ? 'text-sage-600' : 'text-sand-500'}`}>{arabic}</span>
+      <span className="mt-1 font-serif text-xl text-charcoal-900">{label}</span>
+      <span className="mt-1 text-xs uppercase tracking-[0.15em] text-charcoal-400">Drop here</span>
     </div>
   );
 }
@@ -141,12 +138,12 @@ export function MatchGame({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-charcoal-900/40 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="card-surface relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-3xl p-6 md:p-10">
+      <div className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl md:p-10">
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-full p-2 text-cream/60 transition hover:bg-gold-500/10 hover:text-gold-300"
+          className="absolute right-4 top-4 rounded-lg p-2 text-charcoal-400 transition hover:bg-ivory-100 hover:text-charcoal-700"
           aria-label="Close game"
         >
           <X className="h-5 w-5" />
@@ -154,20 +151,20 @@ export function MatchGame({ onClose }: { onClose: () => void }) {
 
         {stage === 'intro' && (
           <div className="animate-fade-up text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gold-500/15">
-              <Timer className="h-8 w-8 text-gold-400" />
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-sand-100">
+              <Timer className="h-7 w-7 text-sand-500" />
             </div>
-            <h3 className="mt-5 font-heading text-3xl text-cream">Match the Surah</h3>
-            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-cream/65">
+            <h3 className="mt-5 font-serif text-3xl font-semibold text-charcoal-900">Match the Surah</h3>
+            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-charcoal-500">
               60 seconds, endless surahs. Drag each card into the city where it was revealed — or
               tap the buttons. Every 3 in a row builds a combo worth more points.
             </p>
-            <div className="mx-auto mt-6 max-w-xs text-left text-xs text-cream/50">
-              <p><span className="text-gold-300">Keyboard:</span> ← Makkah · → Madinah</p>
+            <div className="mx-auto mt-6 max-w-xs text-left text-xs text-charcoal-400">
+              <p><span className="text-sand-500 font-medium">Keyboard:</span> ← Makkah · → Madinah</p>
             </div>
             <button
               onClick={start}
-              className="mt-8 rounded-full bg-gradient-to-r from-gold-600 to-gold-400 px-10 py-3.5 font-medium text-night-950 shadow-[0_0_24px_rgba(233,197,106,0.35)] transition hover:scale-[1.04]"
+              className="mt-8 rounded-lg bg-sand-400 px-10 py-3.5 font-medium text-white transition hover:bg-sand-500"
             >
               Start the Clock
             </button>
@@ -177,34 +174,31 @@ export function MatchGame({ onClose }: { onClose: () => void }) {
         {stage === 'playing' && (
           <div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-cream/60">
-                Score <span className="font-heading text-xl text-gold-300">{score}</span>
+              <span className="text-charcoal-500">
+                Score <span className="font-serif text-xl font-semibold text-sage-700">{score}</span>
               </span>
               {combo >= 2 && (
                 <motion.span
                   initial={{ scale: 0.6 }}
                   animate={{ scale: 1 }}
-                  className="rounded-full bg-orange-500/20 px-3 py-1 text-xs font-semibold text-orange-300"
+                  className="rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-600"
                 >
                   {combo} combo
                 </motion.span>
               )}
-              <span className={`flex items-center gap-1.5 font-heading text-xl ${timeLeft <= 10 ? 'text-red-400' : 'text-cream/80'}`}>
+              <span className={`flex items-center gap-1.5 font-serif text-xl ${timeLeft <= 10 ? 'text-red-500' : 'text-charcoal-700'}`}>
                 <Timer className="h-4 w-4" />
                 {timeLeft}s
               </span>
             </div>
-            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-night-800">
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-ivory-200">
               <div
-                className={`h-full rounded-full transition-all duration-1000 ease-linear ${
-                  timeLeft <= 10 ? 'bg-red-400' : 'bg-gradient-to-r from-emerald-400 to-gold-400'
-                }`}
+                className={`h-full rounded-full transition-all duration-1000 ease-linear ${timeLeft <= 10 ? 'bg-red-400' : 'bg-sage-500'}`}
                 style={{ width: `${(timeLeft / ROUND_TIME) * 100}%` }}
               />
             </div>
 
             <div ref={cardAreaRef} className="relative my-8 flex justify-center">
-              <div className="absolute h-2 w-24 -translate-y-9 rounded-full bg-cream/10" />
               <AnimatePresence mode="wait">
                 <motion.div
                   key={card.number}
@@ -214,13 +208,11 @@ export function MatchGame({ onClose }: { onClose: () => void }) {
                   transition={{ duration: 0.3 }}
                   draggable={draggable}
                   onDragStart={(e) => (e as unknown as React.DragEvent).dataTransfer.setData('text/plain', String(card.number))}
-                  className={`w-56 cursor-grab select-none rounded-2xl border border-gold-500/30 bg-gradient-to-br from-night-800 to-night-850 p-6 text-center shadow-[0_16px_40px_-12px_rgba(0,0,0,0.6)] active:cursor-grabbing ${
-                    draggable ? '' : 'opacity-60'
-                  }`}
+                  className={`w-56 cursor-grab select-none rounded-xl border border-charcoal-200 bg-white p-6 text-center shadow-md active:cursor-grabbing ${draggable ? '' : 'opacity-60'}`}
                 >
-                  <p className="font-arabic text-4xl leading-snug text-gold-300">{card.nameAr}</p>
-                  <p className="mt-2 font-heading text-lg text-cream">{card.nameEn}</p>
-                  <p className="mt-1 text-xs uppercase tracking-[0.2em] text-cream/45">
+                  <p className="font-arabic text-4xl leading-snug text-sage-600">{card.nameAr}</p>
+                  <p className="mt-2 font-serif text-lg font-semibold text-charcoal-900">{card.nameEn}</p>
+                  <p className="mt-1 text-xs uppercase tracking-[0.15em] text-charcoal-400">
                     Surah {card.number} · {card.verses} verses
                   </p>
                 </motion.div>
@@ -231,45 +223,27 @@ export function MatchGame({ onClose }: { onClose: () => void }) {
               <SortBin
                 label="Makkah"
                 arabic="مكية"
-                accent="emerald"
+                isMakkah
                 isHot={hotBin === 'makkah'}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  judge('makkah');
-                }}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setHotBin('makkah');
-                }}
+                onDrop={(e) => { e.preventDefault(); judge('makkah'); }}
+                onDragOver={(e) => { e.preventDefault(); setHotBin('makkah'); }}
                 onDragLeave={() => setHotBin(null)}
               />
               <SortBin
                 label="Madinah"
                 arabic="مدنية"
-                accent="gold"
+                isMakkah={false}
                 isHot={hotBin === 'madinah'}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  judge('madinah');
-                }}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setHotBin('madinah');
-                }}
+                onDrop={(e) => { e.preventDefault(); judge('madinah'); }}
+                onDragOver={(e) => { e.preventDefault(); setHotBin('madinah'); }}
                 onDragLeave={() => setHotBin(null)}
               />
             </div>
             <div className="mt-4 grid grid-cols-2 gap-3 sm:hidden">
-              <button
-                onClick={() => judge('makkah')}
-                className="rounded-full bg-emerald-500/25 py-3 font-medium text-emerald-200"
-              >
+              <button onClick={() => judge('makkah')} className="rounded-lg bg-sage-100 py-3 font-medium text-sage-700">
                 Makkah
               </button>
-              <button
-                onClick={() => judge('madinah')}
-                className="rounded-full bg-gold-500/25 py-3 font-medium text-gold-200"
-              >
+              <button onClick={() => judge('madinah')} className="rounded-lg bg-sand-100 py-3 font-medium text-sand-600">
                 Madinah
               </button>
             </div>
@@ -278,16 +252,16 @@ export function MatchGame({ onClose }: { onClose: () => void }) {
 
         {stage === 'done' && (
           <div className="animate-fade-up text-center">
-            <h3 className="font-heading text-3xl text-cream">Time is up!</h3>
-            <p className="mt-6 font-heading text-6xl font-semibold text-gold-300">{score}</p>
-            <p className="mt-1 text-xs uppercase tracking-[0.25em] text-cream/50">points</p>
-            <div className="mx-auto mt-6 flex max-w-sm justify-center gap-3 text-sm text-cream/70">
-              <span className="card-surface rounded-xl px-4 py-2">{placed} cards sorted</span>
-              <span className="card-surface rounded-xl px-4 py-2">{accuracy}% accuracy</span>
+            <h3 className="font-serif text-3xl font-semibold text-charcoal-900">Time is up!</h3>
+            <p className="mt-6 font-serif text-6xl font-semibold text-sage-700">{score}</p>
+            <p className="mt-1 text-xs uppercase tracking-[0.2em] text-charcoal-400">points</p>
+            <div className="mx-auto mt-6 flex max-w-sm justify-center gap-3 text-sm text-charcoal-600">
+              <span className="card-surface rounded-lg px-4 py-2">{placed} cards sorted</span>
+              <span className="card-surface rounded-lg px-4 py-2">{accuracy}% accuracy</span>
             </div>
             <button
               onClick={start}
-              className="mt-8 rounded-full bg-gradient-to-r from-gold-600 to-gold-400 px-10 py-3.5 font-medium text-night-950 transition hover:scale-[1.04]"
+              className="mt-8 rounded-lg bg-sand-400 px-10 py-3.5 font-medium text-white transition hover:bg-sand-500"
             >
               Play Again
             </button>
@@ -301,9 +275,7 @@ export function MatchGame({ onClose }: { onClose: () => void }) {
           initial={{ opacity: 1, y: 0, scale: 0.8 }}
           animate={{ opacity: 0, y: -70, scale: 1.15 }}
           transition={{ duration: 1, ease: 'easeOut' }}
-          className={`pointer-events-none fixed z-[95] font-heading text-xl font-semibold ${
-            f.good ? 'text-gold-300' : 'text-red-400/90'
-          }`}
+          className={`pointer-events-none fixed z-[95] font-serif text-xl font-semibold ${f.good ? 'text-sage-600' : 'text-red-500'}`}
           style={{ left: f.x, top: f.y, transform: 'translate(-50%, -50%)' }}
         >
           {f.text}

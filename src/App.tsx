@@ -1,48 +1,46 @@
+import { NavProvider, useNav } from './components/NavContext';
 import { Loader } from './components/Loader';
 import { Navbar } from './components/Navbar';
-import { Hero } from './components/Hero';
+import { Footer } from './components/Footer';
+import { HomePage } from './components/HomePage';
+import { SurahExplorer } from './components/SurahExplorer';
 import { TwoEras } from './components/TwoEras';
 import { Timeline } from './components/Timeline';
-import { SurahExplorer } from './components/SurahExplorer';
-import { FactsBanner, RevelationMap } from './components/MapAndFacts';
-import { Quiz } from './components/Quiz';
-import { Insights, VerseReflectionSection } from './components/VerseAndInsights';
-import { Footer } from './components/Footer';
-import { ProgressBadge, ProgressProvider, SectionVisitWatcher } from './components/Progress';
+import { RevelationMap } from './components/MapAndFacts';
+import { QuizPage } from './components/QuizPage';
+import { LearnPage } from './components/LearnPage';
+import { AskAIPage } from './components/AskAIPage';
+import { ProgressPage } from './components/ProgressPage';
+
+function PageRouter() {
+  const { page } = useNav();
+
+  switch (page) {
+    case 'home': return <HomePage />;
+    case 'explorer': return <SurahExplorer />;
+    case 'eras': return <TwoEras />;
+    case 'timeline': return <Timeline />;
+    case 'map': return <RevelationMap />;
+    case 'quiz': return <QuizPage />;
+    case 'learn': return <LearnPage />;
+    case 'askai': return <AskAIPage />;
+    case 'progress': return <ProgressPage />;
+    default: return <HomePage />;
+  }
+}
 
 function App() {
   return (
-    <ProgressProvider>
-      <div className="min-h-screen bg-night-950">
+    <NavProvider>
+      <div className="flex min-h-screen flex-col bg-ivory-50">
         <Loader />
         <Navbar />
-        <main>
-          <Hero />
-          <FactsBanner />
-          <SectionVisitWatcher id="eras">
-            <TwoEras />
-          </SectionVisitWatcher>
-          <SectionVisitWatcher id="timeline">
-            <Timeline />
-          </SectionVisitWatcher>
-          <SectionVisitWatcher id="verse">
-            <VerseReflectionSection />
-          </SectionVisitWatcher>
-          <Insights />
-          <SectionVisitWatcher id="explorer">
-            <SurahExplorer />
-          </SectionVisitWatcher>
-          <SectionVisitWatcher id="map">
-            <RevelationMap />
-          </SectionVisitWatcher>
-          <SectionVisitWatcher id="quiz">
-            <Quiz />
-          </SectionVisitWatcher>
+        <main className="flex-1">
+          <PageRouter />
         </main>
         <Footer />
-        <ProgressBadge />
       </div>
-    </ProgressProvider>
+    </NavProvider>
   );
 }
 

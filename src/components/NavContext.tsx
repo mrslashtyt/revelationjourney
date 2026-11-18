@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 
-export type PageId = 'home' | 'explorer' | 'eras' | 'timeline' | 'map' | 'quiz' | 'learn' | 'askai';
+export type PageId = 'home' | 'explorer' | 'eras' | 'timeline' | 'map' | 'quiz' | 'learn' | 'askai' | 'progress';
 
 interface NavContextValue {
   page: PageId;
@@ -15,7 +15,7 @@ export function useNav() {
 
 function pageFromHash(): PageId {
   const hash = window.location.hash.replace('#', '').split('/')[0];
-  const valid: PageId[] = ['home', 'explorer', 'eras', 'timeline', 'map', 'quiz', 'learn', 'askai'];
+  const valid: PageId[] = ['home', 'explorer', 'eras', 'timeline', 'map', 'quiz', 'learn', 'askai', 'progress'];
   return (valid.includes(hash as PageId) ? hash : 'home') as PageId;
 }
 
