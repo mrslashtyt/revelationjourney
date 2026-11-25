@@ -75,15 +75,75 @@ export function AskAIPage() {
         body: JSON.stringify({ messages: conversation }),
       });
 
-      const data = await response.json() as ChatResponse;
       if (!response.ok) {
+        const data = await response.json() as ChatResponse;
         throw new Error(data.error?.message || `The request failed (${response.status}). Please try again.`);
       }
-      if (!data.answer?.trim()) {
+
+      if (!response.body) {
+        throw new Error('The AI service did not provide a response stream.');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      let answer = '';
+      let buffer = '';
+
+      setMessages((current) => [
+        ...current,
+        { role: 'assistant', text: '' },
+      ]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        const events = buffer.split('\n\n');
+        buffer = events.pop() || '';
+
+        for (const event of events) {
+          const line = event.split('\n').find((part) => part.startsWith('data: '));
+
+          if (!line) continue;
+
+          const payload = line.slice(6).trim();
+
+          if (payload === '[DONE]') continue;
+
+          try {
+            const chunk = JSON.parse(payload);
+            const text = chunk.choices?.[0]?.delta?.content;
+
+            if (typeof text === 'string' && text.length > 0) {
+              answer += text;
+
+              setMessages((current) => {
+                const updated = [...current];
+                const last = updated[updated.length - 1];
+
+                if (last?.role === 'assistant') {
+                  updated[updated.length - 1] = {
+                    ...last,
+                    text: answer,
+                  };
+                }
+
+                return updated;
+              });
+            }
+          } catch {
+            // Ignore incomplete or invalid stream chunks.
+          }
+        }
+      }
+
+      if (!answer.trim()) {
         throw new Error('The AI service returned an empty answer. Please try again.');
       }
-      
-      setMessages((current) => [...current, { role: 'assistant' as const, text: data.answer!.trim() }].slice(-MAX_STORED_MESSAGES));
     } catch (error) {
       const message = error instanceof Error
         ? error.message

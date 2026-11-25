@@ -1,5 +1,7 @@
 import { buildSurahSystemPrompt } from '../lib/surahContext';
 
+const WIKIPEDIA_API = 'https://en.wikipedia.org/w/api.php';
+
 interface Env {
   OPENROUTER_API_KEY?: string;
 }
@@ -19,6 +21,54 @@ const WINDOW_MS = 60_000;
 
 // Best-effort per-isolate protection. This is not a globally shared rate limiter.
 const requestWindows = new Map<string, { count: number; startedAt: number }>();
+
+async function searchWikipedia(query: string): Promise<string> {
+  const url = new URL(WIKIPEDIA_API);
+
+  url.searchParams.set('action', 'query');
+  url.searchParams.set('generator', 'search');
+  url.searchParams.set('gsrsearch', query);
+  url.searchParams.set('gsrlimit', '3');
+  url.searchParams.set('prop', 'extracts|info');
+  url.searchParams.set('exintro', '1');
+  url.searchParams.set('explaintext', '1');
+  url.searchParams.set('inprop', 'url');
+  url.searchParams.set('format', 'json');
+  url.searchParams.set('formatversion', '2');
+
+  try {
+    const response = await fetch(url.toString(), {
+      headers: {
+        'User-Agent': 'RevelationJourney/1.0 (educational website)',
+      },
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (!response.ok) return '';
+
+    const data = await response.json() as {
+      query?: {
+        pages?: Array<{
+          title: string;
+          extract?: string;
+          fullurl?: string;
+        }>;
+      };
+    };
+
+    const pages = data.query?.pages ?? [];
+
+    return pages
+      .filter((page) => page.extract)
+      .map((page) =>
+        `Title: ${page.title}\nInformation: ${page.extract}\nSource: ${page.fullurl ?? ''}`
+      )
+      .join('\n\n')
+      .slice(0, 6000);
+  } catch {
+    return '';
+  }
+}
 
 function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
@@ -101,6 +151,49 @@ async function handlePost({ request, env }: { request: Request; env: Env }): Pro
     content: message.text.trim(),
   }));
 
+  const lastUserMessage = messages[messages.length - 1].content;
+
+  const researchCheck = await fetch(OPENROUTER_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      messages: [
+        {
+          role: 'system',
+          content: 'Decide whether this Quran and revelation education question genuinely needs additional factual background research beyond the supplied website dataset and your existing knowledge. Return only YES or NO. Return YES for difficult historical, academic, manuscript, or scholarly questions where additional sources would materially improve accuracy. Return NO for greetings, simple questions, and questions you can answer reliably without research.',
+        },
+        {
+          role: 'user',
+          content: lastUserMessage,
+        },
+      ],
+      temperature: 0,
+      max_tokens: 3,
+      stream: false,
+    }),
+  }).catch(() => null);
+
+  let needsResearch = false;
+
+  if (researchCheck?.ok) {
+    const researchResult = await researchCheck.json() as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+
+    needsResearch = researchResult.choices?.[0]?.message?.content
+      ?.trim()
+      .toUpperCase()
+      .startsWith('YES') ?? false;
+  }
+
+  const researchContext = needsResearch
+    ? await searchWikipedia(lastUserMessage)
+    : '';
+
   let upstream: Response;
   try {
     upstream = await fetch(OPENROUTER_URL, {
@@ -114,12 +207,20 @@ async function handlePost({ request, env }: { request: Request; env: Env }): Pro
       body: JSON.stringify({
         model: MODEL,
         messages: [
-          { role: 'system', content: buildSurahSystemPrompt() },
+          {
+            role: 'system',
+            content: [
+              buildSurahSystemPrompt(),
+              researchContext
+                ? `ADDITIONAL WIKIPEDIA RESEARCH:\n${researchContext}\n\nUse this information only as supporting background. Evaluate its reliability, do not treat Wikipedia as an Islamic religious authority, and cite the supplied source URLs when using its information.`
+                : '',
+            ].filter(Boolean).join('\n\n'),
+          },
           ...messages,
         ],
         temperature: 0.4,
-        max_tokens: 800,
-        stream: false,
+        max_tokens: 1400,
+        stream: true,
       }),
     });
   } catch {
@@ -139,27 +240,23 @@ async function handlePost({ request, env }: { request: Request; env: Env }): Pro
     return json({ error: { code: 'AI_REQUEST_FAILED', message: 'The AI service could not answer just now. Please try again later.' } }, 502);
   }
 
-  let result: {
-    choices?: Array<{ message?: { content?: string | Array<{ type?: string; text?: string }> } }>;
-  };
-  try {
-    result = await upstream.json() as typeof result;
-  } catch {
-    return json({ error: { code: 'INVALID_PROVIDER_RESPONSE', message: 'The AI service returned an unreadable response. Please try again.' } }, 502);
+  if (!upstream.body) {
+    return json({
+      error: {
+        code: 'EMPTY_STREAM',
+        message: 'The AI service did not provide a response stream.',
+      },
+    }, 502);
   }
 
-  const content = result.choices?.[0]?.message?.content;
-  const answer = typeof content === 'string'
-    ? content.trim()
-    : Array.isArray(content)
-      ? content.filter((part) => part.type === 'text' && typeof part.text === 'string').map((part) => part.text).join('\n').trim()
-      : '';
-
-  if (!answer) {
-    return json({ error: { code: 'EMPTY_RESPONSE', message: 'The AI service returned an empty answer. Please try asking in a different way.' } }, 502);
-  }
-
-  return json({ answer });
+  return new Response(upstream.body, {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/event-stream; charset=utf-8',
+      'Cache-Control': 'no-cache, no-transform',
+      'X-Accel-Buffering': 'no',
+    },
+  });
 }
 
 export async function onRequest({ request, env }: { request: Request; env: Env }): Promise<Response> {
