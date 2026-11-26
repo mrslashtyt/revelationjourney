@@ -153,6 +153,7 @@ async function handlePost({ request, env }: { request: Request; env: Env }): Pro
 
   const lastUserMessage = messages[messages.length - 1].content;
 
+  
   const researchCheck = await fetch(OPENROUTER_URL, {
     method: 'POST',
     headers: {
@@ -164,7 +165,24 @@ async function handlePost({ request, env }: { request: Request; env: Env }): Pro
       messages: [
         {
           role: 'system',
-          content: 'Decide whether this Quran and revelation education question genuinely needs additional factual background research beyond the supplied website dataset and your existing knowledge. Return only YES or NO. Return YES for difficult historical, academic, manuscript, or scholarly questions where additional sources would materially improve accuracy. Return NO for greetings, simple questions, and questions you can answer reliably without research.',
+          content: `Classify the user's Quran and revelation education question.
+
+Decide two things:
+
+1. RESEARCH:
+YES if additional factual research would materially improve a difficult historical, academic, manuscript, or scholarly answer.
+NO for greetings, simple questions, and questions answerable reliably without additional research.
+
+2. LENGTH:
+SHORT for greetings, definitions, simple factual questions, and straightforward answers.
+MEDIUM for explanations, comparisons, and questions requiring several points.
+LONG for complex questions requiring detailed historical context, multiple perspectives, or careful analysis.
+
+Be concise by default. Do not classify a question as LONG merely because it is about an important topic.
+
+Return exactly this format:
+RESEARCH: YES or NO
+LENGTH: SHORT, MEDIUM, or LONG`,
         },
         {
           role: 'user',
@@ -172,27 +190,44 @@ async function handlePost({ request, env }: { request: Request; env: Env }): Pro
         },
       ],
       temperature: 0,
-      max_tokens: 3,
+      max_tokens: 20,
       stream: false,
     }),
   }).catch(() => null);
 
   let needsResearch = false;
+  let responseLength: 'short' | 'medium' | 'long' = 'short';
 
   if (researchCheck?.ok) {
     const researchResult = await researchCheck.json() as {
       choices?: Array<{ message?: { content?: string } }>;
     };
 
-    needsResearch = researchResult.choices?.[0]?.message?.content
-      ?.trim()
-      .toUpperCase()
-      .startsWith('YES') ?? false;
+    const classification =
+      researchResult.choices?.[0]?.message?.content ?? '';
+
+    needsResearch = /\bRESEARCH:\s*YES\b/i.test(classification);
+
+    const lengthMatch = classification.match(
+      /\bLENGTH:\s*(SHORT|MEDIUM|LONG)\b/i
+    );
+
+    if (lengthMatch) {
+      responseLength = lengthMatch[1].toLowerCase() as
+        'short' | 'medium' | 'long';
+    }
   }
+
+  const responseTokenLimits = {
+    short: 220,
+    medium: 550,
+    long: 1400,
+  };
 
   const researchContext = needsResearch
     ? await searchWikipedia(lastUserMessage)
     : '';
+
 
   let upstream: Response;
   try {
@@ -219,7 +254,7 @@ async function handlePost({ request, env }: { request: Request; env: Env }): Pro
           ...messages,
         ],
         temperature: 0.4,
-        max_tokens: 1400,
+        max_tokens: responseTokenLimits[responseLength],
         stream: true,
       }),
     });
